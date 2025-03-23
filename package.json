@@ -1,0 +1,26 @@
+{
+  "name": "roscheri_frontend-library",
+  "version": "0.0.1",
+  "description": "Just another frontend library",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "build": "npx esbuild src/main.ts --bundle --outfile=dist/bundle.js --platform=browser",
+    "dev": "npx esbuild src/main.ts --bundle --outfile=dist/bundle.js --platform=browser --watch",
+    "start": "npx esbuild src/main.ts --bundle --outfile=dist/bundle.js --platform=browser --serve=8080"
+  },
+  "files": [
+    "dist"
+  ],
+  "author": "Yue Jiao",
+  "license": "GPL-3.0-or-later",
+  "devDependencies": {
+    "@eslint/js": "^9.23.0",
+    "@typescript-eslint/eslint-plugin": "^8.27.0",
+    "@typescript-eslint/parser": "^8.27.0",
+    "eslint": "^9.23.0",
+    "globals": "^16.0.0",
+    "typescript": "^5.8.2",
+    "typescript-eslint": "^8.27.0"
+  }
+}
