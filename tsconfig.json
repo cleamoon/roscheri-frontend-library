@@ -1,7 +1,8 @@
 {
     "compilerOptions": {
         "target": "es2020",
-        "module": "esnext",
+        "module": "nodenext",
+        "moduleResolution": "nodenext",
         "jsx": "preserve",
         "jsxFactory": "createElement",
         "outDir": "dist",
