@@ -1,6 +1,6 @@
-import { h, createSignal, createEffect } from '../src/index';
-import type { Component } from '../src/dom';
-import { renderApp } from '../src/render';
+import { h, createSignal, createEffect } from '../src/index'
+import type { Component } from '../src/dom'
+import { renderApp } from '../src/render'
 
 const Counter: Component = () => {
   const [count, setCount] = createSignal(0);
@@ -51,21 +51,18 @@ const Counter: Component = () => {
 
         h('div',
           { style: { display: 'flex', gap: '12px' } },
-
           h('button',
             {
               onClick: () => setCount((c) => c - 1),
               style: buttonStyle,
             },
             '\u2212 Decrement'),
-
           h('button',
             {
               onClick: () => setCount(0),
               style: { ...buttonStyle, background: '#334155' },
             },
             'Reset'),
-
           h('button',
             {
               onClick: () => setCount((c) => c + 1),
