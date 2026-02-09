@@ -1,4 +1,4 @@
-import { createEffect } from './reactive';
+import { createEffect } from './reactive'
 
 export type Child =
   | Node
@@ -8,22 +8,22 @@ export type Child =
   | null
   | undefined
   | (() => unknown)
-  | Child[];
+  | Child[]
 
-export type Props = Record<string, unknown>;
+export type Props = Record<string, unknown>
 
-export type Component<P extends Props = Props> = (props: P) => Node;
+export type Component<P extends Props = Props> = (props: P) => Node
 
 function flattenChildren(children: Child[]): Exclude<Child, Child[]>[] {
-  const result: Exclude<Child, Child[]>[] = [];
+  const result: Exclude<Child, Child[]>[] = []
   for (const child of children) {
     if (Array.isArray(child)) {
-      result.push(...flattenChildren(child));
+      result.push(...flattenChildren(child))
     } else {
-      result.push(child as Exclude<Child, Child[]>);
+      result.push(child as Exclude<Child, Child[]>)
     }
   }
-  return result;
+  return result
 }
 
 export function h(
@@ -32,120 +32,120 @@ export function h(
   ...children: Child[]
 ): Node {
   if (typeof type === 'function') {
-    const resolved = props ?? {};
+    const resolved = props ?? {}
     if (children.length > 0) {
-      resolved.children = children;
+      resolved.children = children
     }
     return type(resolved)
   }
 
-  const el = document.createElement(type);
+  const el = document.createElement(type)
 
   if (props) {
     for (const [key, value] of Object.entries(props)) {
-      if (key === 'children') continue;
-      applyProp(el, key, value);
+      if (key === 'children') continue
+      applyProp(el, key, value)
     }
   }
 
-  const flattenedChildren = flattenChildren(children);
+  const flattenedChildren = flattenChildren(children)
   for (const child of flattenedChildren) {
-    insertChild(el, child);
+    insertChild(el, child)
   }
 
-  return el;
+  return el
 }
 
 function applyProp(el: HTMLElement, key: string, value: unknown): void {
   if (/^on[A-Z]/.test(key)) {
-    const event = key.slice(2).toLowerCase();
-    el.addEventListener(event, value as EventListener);
-    return;
+    const event = key.slice(2).toLowerCase()
+    el.addEventListener(event, value as EventListener)
+    return
   }
 
   if (key === 'ref') {
     if (typeof value === 'function') {
-      (value as (el: HTMLElement) => void)(el);
+      (value as (el: HTMLElement) => void)(el)
     } else if (typeof value === 'object' && value !== null && 'current' in value) {
-      (value as { current: unknown }).current = el;
+      (value as { current: unknown }).current = el
     }
-    return;
+    return
   }
 
   if (key === 'style') {
-    applyStyle(el, value);
-    return;
+    applyStyle(el, value)
+    return
   }
 
   if (typeof value === 'function') {
-    createEffect(() => setProperty(el, key, (value as () => unknown)()));
-    return;
+    createEffect(() => setProperty(el, key, (value as () => unknown)()))
+    return
   }
 
-  setProperty(el, key, value);
+  setProperty(el, key, value)
 }
 
 function setProperty(el: HTMLElement, key: string, value: unknown): void {
   if (key === 'className' || key === 'class') {
-    el.className = value == null ? '' : String(value);
+    el.className = value == null ? '' : String(value)
   } else if (value == null || value === false) {
-    el.removeAttribute(key);
+    el.removeAttribute(key)
   } else if (value === true) {
-    el.setAttribute(key, '');
+    el.setAttribute(key, '')
   } else {
-    el.setAttribute(key, String(value));
+    el.setAttribute(key, String(value))
   }
 }
 
 function applyStyle(el: HTMLElement, value: unknown): void {
   if (typeof value === 'string') {
-    el.setAttribute('style', value);
-    return;
+    el.setAttribute('style', value)
+    return
   }
 
   if (typeof value === 'function') {
-    createEffect(() => applyStyle(el, (value as () => unknown)()));
-    return;
+    createEffect(() => applyStyle(el, (value as () => unknown)()))
+    return
   }
 
   if (typeof value === 'object' && value !== null) {
     for (const [prop, val] of Object.entries(value as Record<string, unknown>)) {
       if (typeof val === 'function') {
-        createEffect(() => setStyleProp(el, prop, (val as () => unknown)()));
+        createEffect(() => setStyleProp(el, prop, (val as () => unknown)()))
       } else {
-        setStyleProp(el, prop, val);
+        setStyleProp(el, prop, val)
       }
     }
   }
 }
 
 function setStyleProp(el: HTMLElement, prop: string, value: unknown): void {
-  const kebabProp = prop.replace(/[A-Z]/g, (match) => `-${match.toLowerCase()}`);
+  const kebabProp = prop.replace(/[A-Z]/g, (match) => `-${match.toLowerCase()}`)
 
   if (value == null || value === false) {
-    el.style.removeProperty(kebabProp);
+    el.style.removeProperty(kebabProp)
   } else {
-    el.style.setProperty(kebabProp, String(value));
+    el.style.setProperty(kebabProp, String(value))
   }
 }
 
 function insertChild(parent: HTMLElement, child: Child): void {
-  if (child == null || typeof child === 'boolean') return;
+  if (child == null || typeof child === 'boolean') return
 
   if (child instanceof Node) {
-    parent.appendChild(child);
-    return;
+    parent.appendChild(child)
+    return
   }
 
   if (typeof child === 'function') {
-    const marker = document.createTextNode('');
-    parent.appendChild(marker);
+    const marker = document.createTextNode('')
+    parent.appendChild(marker)
 
-    let currentNodes: Node[] = [];
+    let currentNodes: Node[] = []
 
     createEffect(() => {
-      const value = (child as () => unknown)();
-      const newNodes = resolveNodes(value);
+      const value = (child as () => unknown)()
+      const newNodes = resolveNodes(value)
 
       if (
         currentNodes.length === 1 &&
@@ -153,29 +153,29 @@ function insertChild(parent: HTMLElement, child: Child): void {
         currentNodes[0] instanceof Text &&
         newNodes[0] instanceof Text
       ) {
-        currentNodes[0].nodeValue = newNodes[0].nodeValue;
-        return;
+        currentNodes[0].nodeValue = newNodes[0].nodeValue
+        return
       }
 
       for (const n of currentNodes) {
-        if (n.parentNode === parent) parent.removeChild(n);
+        if (n.parentNode === parent) parent.removeChild(n)
       }
 
       for (const n of newNodes) {
-        parent.insertBefore(n, marker);
+        parent.insertBefore(n, marker)
       }
 
-      currentNodes = newNodes;
-    });
-    return;
+      currentNodes = newNodes
+    })
+    return
   }
 
-  parent.appendChild(document.createTextNode(String(child)));
+  parent.appendChild(document.createTextNode(String(child)))
 }
 
 function resolveNodes(value: unknown): Node[] {
-  if (value == null || typeof value === 'boolean') return [];
-  if (value instanceof Node) return [value];
-  if (Array.isArray(value)) return value.flatMap(resolveNodes);
-  return [document.createTextNode(String(value))];
+  if (value == null || typeof value === 'boolean') return []
+  if (value instanceof Node) return [value]
+  if (Array.isArray(value)) return value.flatMap(resolveNodes)
+  return [document.createTextNode(String(value))]
 }
