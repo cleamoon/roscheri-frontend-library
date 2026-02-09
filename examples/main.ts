@@ -1,5 +1,6 @@
-import { h, render, createSignal, createEffect } from '../src/index';
-import type { Component } from '../src/index';
+import { h, createSignal, createEffect } from '../src/index';
+import type { Component } from '../src/dom';
+import { renderApp } from '../src/render';
 
 const Counter: Component = () => {
   const [count, setCount] = createSignal(0);
@@ -88,4 +89,4 @@ const buttonStyle: Record<string, string> = {
   cursor: 'pointer',
 };
 
-render(() => h(Counter, null), document.getElementById('app')!);
+renderApp(Counter);
