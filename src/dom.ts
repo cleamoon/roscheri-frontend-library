@@ -14,6 +14,18 @@ export type Props = Record<string, unknown>;
 
 export type Component<P extends Props = Props> = (props: P) => Node;
 
+function flattenChildren(children: Child[]): Exclude<Child, Child[]>[] {
+  const result: Exclude<Child, Child[]>[] = [];
+  for (const child of children) {
+    if (Array.isArray(child)) {
+      result.push(...flattenChildren(child));
+    } else {
+      result.push(child as Exclude<Child, Child[]>);
+    }
+  }
+  return result;
+}
+
 export function h(
   type: string | Component,
   props?: Props | null,
@@ -36,15 +48,16 @@ export function h(
     }
   }
 
-  appendChildren(el, children);
+  const flattenedChildren = flattenChildren(children);
+  for (const child of flattenedChildren) {
+    insertChild(el, child);
+  }
 
   return el;
 }
 
-const EVENT_RE = /^on[A-Z]/;
-
 function applyProp(el: HTMLElement, key: string, value: unknown): void {
-  if (EVENT_RE.test(key)) {
+  if (/^on[A-Z]/.test(key)) {
     const event = key.slice(2).toLowerCase();
     el.addEventListener(event, value as EventListener);
     return;
@@ -116,24 +129,6 @@ function setStyleProp(el: HTMLElement, prop: string, value: unknown): void {
 
 function camelToKebab(str: string): string {
   return str.replace(/[A-Z]/g, (m) => '-' + m.toLowerCase());
-}
-
-function appendChildren(parent: HTMLElement, children: Child[]): void {
-  for (const child of flattenChildren(children)) {
-    insertChild(parent, child);
-  }
-}
-
-function flattenChildren(children: Child[]): Exclude<Child, Child[]>[] {
-  const result: Exclude<Child, Child[]>[] = [];
-  for (const child of children) {
-    if (Array.isArray(child)) {
-      result.push(...flattenChildren(child));
-    } else {
-      result.push(child as Exclude<Child, Child[]>);
-    }
-  }
-  return result;
 }
 
 function insertChild(parent: HTMLElement, child: Child): void {
