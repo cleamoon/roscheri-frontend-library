@@ -1,4 +1,3 @@
-import type { Component } from './component';
 import { createEffect } from './reactive';
 
 export type Child =
@@ -12,6 +11,8 @@ export type Child =
   | Child[];
 
 export type Props = Record<string, unknown>;
+
+export type Component<P extends Props = Props> = (props: P) => Node;
 
 export function h(
   type: string | Component,
