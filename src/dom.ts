@@ -34,9 +34,9 @@ export function h(
   if (typeof type === 'function') {
     const resolved = props ?? {};
     if (children.length > 0) {
-      (resolved as Record<string, unknown>).children = children;
+      resolved.children = children;
     }
-    return (type as Component)(resolved);
+    return type(resolved)
   }
 
   const el = document.createElement(type);
@@ -120,15 +120,13 @@ function applyStyle(el: HTMLElement, value: unknown): void {
 }
 
 function setStyleProp(el: HTMLElement, prop: string, value: unknown): void {
-  if (value == null || value === false) {
-    el.style.removeProperty(camelToKebab(prop));
-  } else {
-    el.style.setProperty(camelToKebab(prop), String(value));
-  }
-}
+  const kebabProp = prop.replace(/[A-Z]/g, (match) => `-${match.toLowerCase()}`);
 
-function camelToKebab(str: string): string {
-  return str.replace(/[A-Z]/g, (m) => '-' + m.toLowerCase());
+  if (value == null || value === false) {
+    el.style.removeProperty(kebabProp);
+  } else {
+    el.style.setProperty(kebabProp, String(value));
+  }
 }
 
 function insertChild(parent: HTMLElement, child: Child): void {
