@@ -1,4 +1,4 @@
-export type Accessor<T> = () => T
+export type Getter<T> = () => T
 
 export type Setter<T> = (value: T | ((prev: T) => T)) => void
 
@@ -89,11 +89,11 @@ export function createRoot<T>(fn: (dispose: () => void) => T): T {
   }
 }
 
-export function createSignal<T>(initialValue: T): [Accessor<T>, Setter<T>] {
+export function createSignal<T>(initialValue: T): [Getter<T>, Setter<T>] {
   let value = initialValue
   const subscribers = new Set<Computation>()
 
-  const read: Accessor<T> = () => {
+  const read: Getter<T> = () => {
     if (listener) {
       subscribers.add(listener)
       listener.sources.add(subscribers)
@@ -130,7 +130,7 @@ export function createEffect(fn: () => void): void {
   runComputation(comp)
 }
 
-export function createMemo<T>(fn: () => T): Accessor<T> {
+export function createMemo<T>(fn: () => T): Getter<T> {
   const [read, write] = createSignal<T>(undefined as unknown as T)
   createEffect(() => write(() => fn()))
   return read
@@ -156,12 +156,3 @@ export function onCleanup(fn: () => void): void {
   }
 }
 
-export function untrack<T>(fn: () => T): T {
-  const prev = listener
-  listener = null
-  try {
-    return fn()
-  } finally {
-    listener = prev
-  }
-}
