@@ -59,16 +59,6 @@ function runComputation(comp: Computation): void {
   }
 }
 
-function notify(subscribers: Set<Computation>): void {
-  const subs = [...subscribers]
-
-  if (batchDepth > 0) {
-    for (const s of subs) batchQueue.add(s)
-  } else {
-    for (const s of subs) runComputation(s)
-  }
-}
-
 export function createRoot<T>(fn: (dispose: () => void) => T): T {
   const root: Computation = {
     fn: null,
@@ -109,7 +99,14 @@ export function createSignal<T>(initialValue: T): [Getter<T>, Setter<T>] {
 
     if (!Object.is(value, nextVal)) {
       value = nextVal
-      notify(subscribers)
+
+      const subs = [...subscribers]
+
+      if (batchDepth > 0) {
+        for (const s of subs) batchQueue.add(s)
+      } else {
+        for (const s of subs) runComputation(s)
+      }
     }
   }
 
