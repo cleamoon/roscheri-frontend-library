@@ -1,18 +1,18 @@
-import { Component, h } from './dom'
-import { createRoot } from './reactive'
+import type { Component } from './dom'
+import { h } from './dom'
+import { createRoot as createReactiveRoot } from './reactive'
 
-export function renderApp(app: Component): () => void {
-  const container = document.getElementById('app')
-  if (!container) {
-    throw new Error('Container element not found')
+export type Root = {
+  render(app: Component): void
+}
+
+export function createRoot(container: HTMLElement): Root {
+  return {
+    render(app: Component): void {
+      createReactiveRoot(() => {
+        const node = h(app, null)
+        container.appendChild(node)
+      })
+    },
   }
-  return createRoot((dispose) => {
-    const node = h(app, null)
-    container!.appendChild(node)
-
-    return () => {
-      dispose()
-      container!.textContent = ''
-    }
-  })
 }

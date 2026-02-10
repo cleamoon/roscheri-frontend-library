@@ -2,7 +2,6 @@ export {
   createSignal,
   createEffect,
   createMemo,
-  createRoot,
   batch,
   onCleanup,
   untrack,
@@ -12,5 +11,6 @@ export type { Accessor, Setter } from './reactive'
 export type { Child, Props, Component } from './dom'
 
 export { h } from './dom'
-export { renderApp } from './render'
+export { createRoot } from './render'
+export type { Root } from './render'
 
