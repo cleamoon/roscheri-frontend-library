@@ -1,6 +1,6 @@
 import type { Component } from './dom'
 import { h } from './dom'
-import { createRoot as createReactiveRoot } from './reactive'
+import { createReactiveRoot } from './reactive'
 
 export type Root = {
   render(app: Component): void

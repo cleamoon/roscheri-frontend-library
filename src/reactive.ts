@@ -2,7 +2,7 @@ export type Getter<T> = () => T
 
 export type Setter<T> = (value: T | ((prev: T) => T)) => void
 
-interface Computation {
+type Computation = {
   fn: (() => void) | null;
   sources: Set<Set<Computation>>;
   cleanups: (() => void)[];
@@ -19,21 +19,19 @@ let batchDepth = 0
 const batchQueue = new Set<Computation>()
 
 function cleanupNode(comp: Computation): void {
-  for (const fn of comp.cleanups) fn()
-  comp.cleanups = []
+  comp.cleanups.forEach(cleanup => cleanup())
+  comp.owned.forEach(child => disposeNode(child))
 
-  for (const child of comp.owned) {
-    disposeNode(child)
-  }
   comp.owned = []
+  comp.cleanups = []
 }
 
 function disposeNode(comp: Computation): void {
   cleanupNode(comp)
-  for (const subs of comp.sources) {
-    subs.delete(comp)
-  }
+
+  comp.sources.forEach(source => source.delete(comp))
   comp.sources.clear()
+
   comp.fn = null
 }
 
@@ -42,9 +40,7 @@ function runComputation(comp: Computation): void {
 
   cleanupNode(comp)
 
-  for (const subs of comp.sources) {
-    subs.delete(comp)
-  }
+  comp.sources.forEach(source => source.delete(comp))
   comp.sources.clear()
 
   const prevListener = listener
@@ -59,23 +55,21 @@ function runComputation(comp: Computation): void {
   }
 }
 
-export function createRoot<T>(fn: (dispose: () => void) => T): T {
+export function createReactiveRoot<T>(fn: () => T): T {
   const root: Computation = {
     fn: null,
     sources: new Set(),
-    cleanups: [],
+    cleanups: [() => disposeNode(root)],
     owner,
     owned: [],
   }
 
-  if (owner) owner.owned.push(root)
-
-  const prevOwner = owner
   owner = root
+
   try {
-    return fn(() => disposeNode(root))
+    return fn()
   } finally {
-    owner = prevOwner
+    owner = null
   }
 }
 
@@ -100,12 +94,10 @@ export function createSignal<T>(initialValue: T): [Getter<T>, Setter<T>] {
     if (!Object.is(value, nextVal)) {
       value = nextVal
 
-      const subs = [...subscribers]
-
       if (batchDepth > 0) {
-        for (const s of subs) batchQueue.add(s)
+        subscribers.forEach(sub => batchQueue.add(sub))
       } else {
-        for (const s of subs) runComputation(s)
+        subscribers.forEach(sub => runComputation(sub))
       }
     }
   }

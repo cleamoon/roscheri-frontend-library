@@ -4,10 +4,9 @@ export {
   createMemo,
   batch,
   onCleanup,
-  untrack,
 } from './reactive'
 
-export type { Accessor, Setter } from './reactive'
+export type { Getter, Setter } from './reactive'
 export type { Child, Props, Component } from './dom'
 
 export { h } from './dom'
