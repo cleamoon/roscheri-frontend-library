@@ -2,7 +2,6 @@ export {
   createSignal,
   createEffect,
   createMemo,
-  batch,
   onCleanup,
 } from './reactive'
 

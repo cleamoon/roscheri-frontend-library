@@ -14,13 +14,25 @@ let listener: Computation | null = null
 
 let owner: Computation | null = null
 
-let batchDepth = 0
+let pendingFlush = false
 
-const batchQueue = new Set<Computation>()
+const pendingComputations = new Set<Computation>()
+
+function scheduleFlush(): void {
+  if (!pendingFlush) {
+    pendingFlush = true
+    queueMicrotask(() => {
+      pendingFlush = false
+      const queue = [...pendingComputations]
+      pendingComputations.clear()
+      for (const comp of queue) runComputation(comp)
+    })
+  }
+}
 
 function cleanupNode(comp: Computation): void {
-  comp.cleanups.forEach(cleanup => cleanup())
-  comp.owned.forEach(child => disposeNode(child))
+  comp.cleanups.forEach((cleanup) => cleanup())
+  comp.owned.forEach((child) => disposeNode(child))
 
   comp.owned = []
   comp.cleanups = []
@@ -29,18 +41,26 @@ function cleanupNode(comp: Computation): void {
 function disposeNode(comp: Computation): void {
   cleanupNode(comp)
 
-  comp.sources.forEach(source => source.delete(comp))
+  comp.sources.forEach((source) => source.delete(comp))
   comp.sources.clear()
 
   comp.fn = null
 }
 
 function runComputation(comp: Computation): void {
+  console.log('runComputation', comp)
+  console.log('comp.fn', comp.fn)
+  console.log('comp.sources', comp.sources)
+  console.log('comp.cleanups', comp.cleanups)
+  console.log('comp.owner', comp.owner)
+  console.log('comp.owned', comp.owned)
+  console.log('listener', listener)
+  console.log('owner', owner)
   if (!comp.fn) return
 
   cleanupNode(comp)
 
-  comp.sources.forEach(source => source.delete(comp))
+  comp.sources.forEach((source) => source.delete(comp))
   comp.sources.clear()
 
   const prevListener = listener
@@ -78,6 +98,7 @@ export function createSignal<T>(initialValue: T): [Getter<T>, Setter<T>] {
   const subscribers = new Set<Computation>()
 
   const read: Getter<T> = () => {
+    console.log('read', value)
     if (listener) {
       subscribers.add(listener)
       listener.sources.add(subscribers)
@@ -86,20 +107,20 @@ export function createSignal<T>(initialValue: T): [Getter<T>, Setter<T>] {
   }
 
   const write: Setter<T> = (next) => {
+    console.log('write', next)
+    console.log('value', value)
+    console.log('subscribers', subscribers)
+    console.log('listener', listener)
     const nextVal =
-      typeof next === 'function'
-        ? (next as (prev: T) => T)(value)
-        : next
+      typeof next === 'function' ? (next as (value: T) => T)(value) : (next as T)
 
-    if (!Object.is(value, nextVal)) {
-      value = nextVal
+    if (!Object.is(value, nextVal)) return
 
-      if (batchDepth > 0) {
-        subscribers.forEach(sub => batchQueue.add(sub))
-      } else {
-        subscribers.forEach(sub => runComputation(sub))
-      }
+    value = nextVal
+    for (const sub of subscribers) {
+      pendingComputations.add(sub)
     }
+    scheduleFlush()
   }
 
   return [read, write]
@@ -125,23 +146,8 @@ export function createMemo<T>(fn: () => T): Getter<T> {
   return read
 }
 
-export function batch(fn: () => void): void {
-  batchDepth++
-  try {
-    fn()
-  } finally {
-    batchDepth--
-    if (batchDepth === 0 && batchQueue.size > 0) {
-      const queue = [...batchQueue]
-      batchQueue.clear()
-      for (const comp of queue) runComputation(comp)
-    }
-  }
-}
-
 export function onCleanup(fn: () => void): void {
   if (owner) {
     owner.cleanups.push(fn)
   }
 }
-
